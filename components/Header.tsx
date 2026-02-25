@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { audio } from '@/lib/audio';
 import { storage } from '@/lib/storage';
 import Modal from './Modal';
@@ -9,16 +9,14 @@ import MemoryTimeline from './MemoryTimeline';
 import SoundToggle from './SoundToggle';
 
 export default function Header() {
+  const initial = useMemo(() => storage.read(), []);
   const [timelineOpen, setTimelineOpen] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [timeline, setTimeline] = useState(storage.read().timeline);
+  const [muted, setMuted] = useState(initial.muted);
+  const [timeline] = useState(initial.timeline);
 
   useEffect(() => {
-    const state = storage.read();
-    setMuted(state.muted);
-    setTimeline(state.timeline);
-    audio.setMuted(state.muted);
-  }, []);
+    audio.setMuted(muted);
+  }, [muted]);
 
   const toggleSound = () => {
     const next = !muted;
