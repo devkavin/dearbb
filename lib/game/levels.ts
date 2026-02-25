@@ -21,6 +21,7 @@ export const levels: Level[] = [
       { x: 165, y: 233, w: 24, h: 24, ...notes[0] },
       { x: 350, y: 203, w: 24, h: 24, ...notes[1] }
     ],
+    dragon: { x: 560, y: 142, w: 52, h: 52 },
     portal: { x: 760, y: 276, w: 40, h: 44 },
     moon: { x: 700, y: 20, w: 50, h: 50 },
     props: [{ x: 500, y: 282, w: 24, h: 24 }]
@@ -37,6 +38,7 @@ export const levels: Level[] = [
       { x: 230, y: 235, w: 24, h: 24, ...notes[2] },
       { x: 585, y: 186, w: 24, h: 24, ...notes[3] }
     ],
+    dragon: { x: 468, y: 128, w: 52, h: 52 },
     portal: { x: 760, y: 276, w: 40, h: 44 },
     moon: { x: 700, y: 20, w: 50, h: 50 },
     props: [{ x: 370, y: 282, w: 24, h: 24 }]
@@ -51,6 +53,7 @@ export const levels: Level[] = [
       { x: 670, y: 176, w: 120, h: 18 }
     ],
     tokens: [{ x: 710, y: 144, w: 24, h: 24, ...notes[4] }],
+    dragon: { x: 598, y: 96, w: 52, h: 52 },
     portal: { x: 760, y: 126, w: 40, h: 44 },
     moon: { x: 700, y: 20, w: 50, h: 50 },
     props: [{ x: 125, y: 282, w: 24, h: 24 }]
