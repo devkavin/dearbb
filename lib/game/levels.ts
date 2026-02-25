@@ -1,11 +1,11 @@
 import { Level } from './entities';
 
 const notes = [
-  { id: 'soft-kitty', note: 'I sing Soft kitty, warm kitty until your eyes go sleepy, bb.', sticker: '🎶💖' },
-  { id: 'bedtime-story', note: 'Our bedtime stories are still my favorite tiny world to read to you.', sticker: '📖✨' },
-  { id: 'talking-god', note: 'Even your “talking to god” updates somehow become my cutest notifications.', sticker: '🚪⭐' },
-  { id: 'exam-power', note: 'Exam mode activated: you are brilliant, steady, and unstoppable.', sticker: '✏️🌟' },
-  { id: 'after-exam-date', note: 'Final memory unlocked: let’s plan our after-exam date adventure.', sticker: '📅💘' }
+  { id: 'soft-kitty', note: 'Achievement unlocked: Sleepy Song — soft-kitty duty activated until you drift off. 💤', sticker: '🎶💖' },
+  { id: 'bedtime-story', note: 'Achievement unlocked: Story Snuggle — one tiny bedtime world delivered with extra cuddles.', sticker: '📖✨' },
+  { id: 'talking-god', note: 'Achievement unlocked: Sacred Update — your “talking to God” moment reached my heart first.', sticker: '🚪⭐' },
+  { id: 'exam-power', note: 'Achievement unlocked: Study Supernova — you stayed brave, focused, and brilliant all the way.', sticker: '✏️🌟' },
+  { id: 'after-exam-date', note: 'Final achievement: Date Quest Open — after exams, we redeem this for a sweet little adventure.', sticker: '📅💘' }
 ];
 
 export const levels: Level[] = [
