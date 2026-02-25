@@ -50,6 +50,15 @@ body {
 .soft-float { animation: floaty 2.8s ease-in-out infinite; }
 .animate-pop { animation: pop .4s ease-out; }
 
+.letter-sheet {
+  will-change: transform, opacity;
+  transition-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+.letter-sheet.is-open {
+  animation: letter-unfold .75s ease;
+}
+
 .confetti span {
   position: absolute;
   width: 8px;
@@ -75,6 +84,12 @@ body {
 @keyframes pop {
   0% { transform: scale(.9); opacity: .6; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes letter-unfold {
+  0% { transform: translateY(95px) scale(.95); }
+  60% { transform: translateY(-4px) scale(1.01); }
+  100% { transform: translateY(0) scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
