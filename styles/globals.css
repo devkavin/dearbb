@@ -1,7 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@400;600;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-candy: #f9d8ec;
+  --color-sky: #d7ecff;
+  --color-lavender: #e5ddff;
+  --font-pixel: "Press Start 2P", monospace;
+  --font-body: "Quicksand", system-ui, sans-serif;
+}
 
 :root {
   color-scheme: light;
@@ -37,25 +43,12 @@ body {
   animation: twinkle 2.3s ease-in-out infinite;
 }
 
-.glow-sparkle::before {
-  top: -8px;
-  left: -10px;
-}
+.glow-sparkle::before { top: -8px; left: -10px; }
+.glow-sparkle::after { right: -10px; bottom: -8px; animation-delay: 0.8s; }
 
-.glow-sparkle::after {
-  right: -10px;
-  bottom: -8px;
-  animation-delay: 0.8s;
-}
-
-.sparkle::after {
-  content: '✨';
-  margin-left: 0.3rem;
-}
-
-.soft-float {
-  animation: floaty 2.8s ease-in-out infinite;
-}
+.sparkle::after { content: '✨'; margin-left: 0.3rem; }
+.soft-float { animation: floaty 2.8s ease-in-out infinite; }
+.animate-pop { animation: pop .4s ease-out; }
 
 .confetti span {
   position: absolute;
@@ -74,6 +67,20 @@ body {
   50% { transform: scale(1.2); opacity: 1; }
 }
 
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pop {
+  0% { transform: scale(.9); opacity: .6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

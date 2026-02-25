@@ -16,28 +16,26 @@ import { storage } from '@/lib/storage';
 const TOTAL = 5;
 
 export default function PlayPage() {
+  const initial = useMemo(() => storage.read(), []);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const keys = useRef({ left: false, right: false, jump: false });
   const router = useRouter();
-  const [stage, setStage] = useState(0);
-  const [collected, setCollected] = useState<string[]>([]);
+  const [stage, setStage] = useState(initial.stage || 0);
+  const [collected, setCollected] = useState<string[]>(initial.collectedTokenIds || []);
   const [journalOpen, setJournalOpen] = useState(true);
   const [flash, setFlash] = useState('');
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion] = useState(initial.reducedMotion);
   const [booth, setBooth] = useState(false);
   const [storyTitle, setStoryTitle] = useState('Moonlight Snuggle');
   const [storyLine, setStoryLine] = useState('Then bb smiled and the stars tucked her in.');
-
-  const memory = useMemo(() => storage.read().timeline, [collected]);
+  const [memory, setMemory] = useState(initial.timeline);
 
   useEffect(() => {
-    const saved = storage.read();
-    setStage(saved.stage || 0);
-    setCollected(saved.collectedTokenIds || []);
-    setReducedMotion(saved.reducedMotion);
-    audio.setMuted(saved.muted);
-    audio.ambient(!saved.muted);
+    audio.setMuted(initial.muted);
+    audio.ambient(!initial.muted);
+  }, [initial.muted]);
 
+  useEffect(() => {
     let stop = () => {};
     let mounted = true;
     loadAssets().then((assets) => {
@@ -45,7 +43,7 @@ export default function PlayPage() {
       const ctx = canvasRef.current.getContext('2d');
       if (!ctx) return;
 
-      let currentStage = saved.stage || 0;
+      let currentStage = storage.read().stage || 0;
       const player = createPlayer(levels[currentStage].spawn.x, levels[currentStage].spawn.y);
       stop = startLoop(() => {
         const level = levels[currentStage];
@@ -59,13 +57,15 @@ export default function PlayPage() {
         }
 
         for (const token of level.tokens) {
-          if (token.collected || collected.includes(token.id)) continue;
+          const alreadyCollected = storage.read().collectedTokenIds;
+          if (token.collected || alreadyCollected.includes(token.id)) continue;
           if (intersects(player, token)) {
             token.collected = true;
-            const nextCollected = [...storage.read().collectedTokenIds, token.id];
+            const nextCollected = [...alreadyCollected, token.id];
             setCollected(nextCollected);
             storage.write({ collectedTokenIds: nextCollected });
             storage.pushTimeline({ id: token.id, note: token.note, sticker: token.sticker });
+            setMemory(storage.read().timeline);
             setFlash(Math.random() > 0.5 ? 'bb moment unlocked ✨' : 'Nikki smile detected 💖');
             setTimeout(() => setFlash(''), 1200);
             audio.token();
@@ -121,7 +121,7 @@ export default function PlayPage() {
     });
 
     return () => { mounted = false; stop(); };
-  }, [router, collected]);
+  }, [router]);
 
   const downloadStoryCard = () => {
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='#fff5fd'/><rect x='20' y='20' width='520' height='280' rx='18' fill='#e7f4ff' stroke='#a597db' stroke-width='4'/><text x='44' y='74' font-size='22' fill='#6f57a9'>Bedtime Story Booth</text><text x='44' y='124' font-size='28' fill='#3f315e'>${storyTitle}</text><text x='44' y='172' font-size='18' fill='#4b4664'>${storyLine}</text><text x='44' y='244' font-size='16'>🐾💖✨📖🎶</text></svg>`;
@@ -157,7 +157,7 @@ export default function PlayPage() {
         {booth && (
           <div className="mt-4 rounded-2xl bg-white p-4">
             <h3 className="font-pixel text-[10px]">Bedtime Story Booth unlocked 🌙</h3>
-            <p className="mt-2 text-sm">Pick an intro: "A sleepy kitten guarded your dreams" · "The moon wrote your name in glitter" · "A tiny star whispered goodnight"</p>
+            <p className="mt-2 text-sm">Pick an intro: &quot;A sleepy kitten guarded your dreams&quot; · &quot;The moon wrote your name in glitter&quot; · &quot;A tiny star whispered goodnight&quot;</p>
             <input className="mt-2 w-full rounded-lg border p-2" value={storyTitle} onChange={(e) => setStoryTitle(e.target.value)} placeholder="Story title" />
             <input className="mt-2 w-full rounded-lg border p-2" value={storyLine} onChange={(e) => setStoryLine(e.target.value)} placeholder="A short line" />
             <button className="btn-cute mt-2 bg-violet-500 px-4 py-2 text-white" onClick={downloadStoryCard}>Export story SVG card</button>
