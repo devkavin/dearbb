@@ -169,8 +169,9 @@ export default function PlayPage() {
           </div>
         </div>
 
-        <canvas ref={canvasRef} width={820} height={360} className="w-full rounded-2xl border-4 border-white bg-white/70 shadow-lg" />
+        <canvas ref={canvasRef} width={820} height={360} className="w-full rounded-2xl border-4 border-white bg-white/80 shadow-[0_16px_40px_rgba(120,90,200,0.3)] ring-2 ring-violet-200/70" />
         <OnScreenControls onLeft={(d) => { keys.current.left = d; }} onRight={(d) => { keys.current.right = d; }} onJump={() => { keys.current.jump = true; }} />
+        <p className="mt-2 text-center text-xs font-semibold text-violet-700 md:hidden">Use the joystick + jump bubble for mobile play.</p>
 
         {flash && <p className="mt-3 inline-block rounded-xl bg-white px-3 py-2 text-sm sparkle">{flash}</p>}
 
