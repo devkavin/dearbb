@@ -131,13 +131,42 @@ export default function PlayPage() {
     a.click();
   };
 
+  const resetGame = () => {
+    const currentState = storage.read();
+    storage.write({
+      stage: 0,
+      collectedTokenIds: [],
+      timeline: [],
+      moonClicks: 0,
+      revealChoice: null,
+      revealNote: ''
+    });
+
+    for (const level of levels) {
+      for (const token of level.tokens) token.collected = false;
+    }
+
+    setStage(0);
+    setCollected([]);
+    setMemory([]);
+    setBooth(false);
+    setFlash('Game reset ✨');
+    setTimeout(() => setFlash(''), 1200);
+    if (currentState.stage !== 0) {
+      window.location.reload();
+    }
+  };
+
   return (
     <main className="pb-10">
       <Header />
       <section className="mx-auto max-w-5xl rounded-3xl bg-white/35 p-4 shadow-[0_18px_35px_rgba(150,120,220,0.18)]">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="font-pixel text-xs">Progress: {collected.length}/{TOTAL} tokens · zone {stage + 1}/3</p>
-          <button className="btn-cute bg-white px-3 py-2 text-sm text-violet-700" onClick={() => setJournalOpen((v) => !v)}>Memory Journal</button>
+          <div className="flex items-center gap-2">
+            <button className="btn-cute bg-white px-3 py-2 text-sm text-violet-700" onClick={() => setJournalOpen((v) => !v)}>Memory Journal</button>
+            <button className="btn-cute bg-rose-100 px-3 py-2 text-sm text-rose-700" onClick={resetGame}>Reset Game</button>
+          </div>
         </div>
 
         <canvas ref={canvasRef} width={820} height={360} className="w-full rounded-2xl border-4 border-white bg-white/70 shadow-lg" />
