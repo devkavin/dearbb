@@ -23,7 +23,6 @@ export default function Header() {
     setMuted(next);
     storage.write({ muted: next });
     audio.setMuted(next);
-    audio.click();
   };
 
   return (

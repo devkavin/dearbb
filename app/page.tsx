@@ -5,10 +5,20 @@ import { useEffect, useMemo, useState } from 'react';
 import EnvelopeLetter from '@/components/EnvelopeLetter';
 import Header from '@/components/Header';
 import LdrModeToggle from '@/components/LdrModeToggle';
+import TypedLetterContent from '@/components/TypedLetterContent';
 import { audio } from '@/lib/audio';
 import { storage } from '@/lib/storage';
 
 type Sparkle = { id: number; x: number; y: number };
+
+const LETTER_LINES = [
+  'bb, this is a little pocket hug for you.',
+  'There are so many tiny rituals in my day that quietly belong to you. The late night calls. Singing Soft kitty until your breathing slows. Reading the bedtime stories I wrote just to hear that sleepy little voice say “one moree.”',
+  'Even in the most random parts of my day, like when I disappear to “talk to god”, you somehow manage to live in my head rent free. That\'s just how constant you are in my world.',
+  'You\'re about to conquer your exam, and I need you to know how proud I am of you. I see how hard you\'ve worked. I believe in you more than you know.',
+  'So here\'s something small, playful, and made only for you.',
+  'Play whenever you want… and meet me at the mailbox at the end for something special. 💖'
+];
 
 export default function HomePage() {
   const initial = useMemo(() => storage.read(), []);
@@ -19,7 +29,8 @@ export default function HomePage() {
 
   useEffect(() => {
     audio.setMuted(muted);
-    audio.ambient(!muted);
+    audio.setSceneMusic('website');
+    return () => audio.setSceneMusic('none');
   }, [muted]);
 
   const toggleReduced = () => {
@@ -55,15 +66,14 @@ export default function HomePage() {
         </div>
 
         <EnvelopeLetter>
-          <h1 className="font-pixel text-sm text-violet-700">Dear Jhanvi</h1>
-          <div className="mt-3 space-y-3 text-base leading-relaxed text-slate-700">
-            <p>bb, this is a little pocket hug for you.</p>
-            <p>There are so many tiny rituals in my day that quietly belong to you. The late night calls. Singing Soft kitty until your breathing slows. Reading the bedtime stories I wrote just to hear that sleepy little voice say “one moree.”</p>
-            <p>Even in the most random parts of my day, like when I disappear to “talk to god”, you somehow manage to live in my head rent free. That&apos;s just how constant you are in my world.</p>
-            <p>You&apos;re about to conquer your exam, and I need you to know how proud I am of you. I see how hard you&apos;ve worked. I believe in you more than you know.</p>
-            <p>So here&apos;s something small, playful, and made only for you.</p>
-            <p>Play whenever you want…<br />and meet me at the mailbox at the end for something special. 💖</p>
-          </div>
+          {(open) => (
+            <>
+              <h1 className="font-pixel text-sm text-violet-700">Dear Jhanvi</h1>
+              <div className="mt-3">
+                <TypedLetterContent key={open ? 'open' : 'closed'} lines={LETTER_LINES} active={open} />
+              </div>
+            </>
+          )}
         </EnvelopeLetter>
 
         <div className="flex flex-wrap gap-3">

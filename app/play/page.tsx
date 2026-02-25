@@ -32,7 +32,8 @@ export default function PlayPage() {
 
   useEffect(() => {
     audio.setMuted(initial.muted);
-    audio.ambient(!initial.muted);
+    audio.setSceneMusic('game');
+    return () => audio.setSceneMusic('none');
   }, [initial.muted]);
 
   useEffect(() => {
