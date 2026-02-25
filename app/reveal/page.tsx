@@ -97,7 +97,7 @@ export default function RevealPage() {
             </div>
 
             <h1 className="font-pixel text-xs text-violet-700">Will you go on a date with me after your exam, bb?</h1>
-            <p className="mt-3 text-violet-900/90">You decide the day. I’ll follow your schedule. Nikki, I just want your yes when you feel ready 💖</p>
+            <p className="mt-3 text-violet-900/90">You decide the day. I’ll follow your schedule. Love, I just want your yes when you feel ready 💖</p>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <button className="btn-cute bg-violet-500 px-4 py-3 text-white shadow-[0_8px_20px_rgba(139,92,246,0.35)]" onClick={() => saveChoice('yes')}>Yes bb 💖</button>
