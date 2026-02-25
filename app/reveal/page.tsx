@@ -59,7 +59,7 @@ export default function RevealPage() {
       <circle cx='670' cy='80' r='64' fill='#ffd9ef' opacity='0.7'/>
       <circle cx='110' cy='390' r='72' fill='#dff2ff' opacity='0.8'/>
       <rect x='38' y='38' width='684' height='384' rx='30' fill='url(#card)' stroke='#c9b5ff' stroke-width='4'/>
-      <text x='72' y='98' font-size='36' fill='#6d43b7' font-family='Quicksand, sans-serif' font-weight='700'>💌 Dear bb date card</text>
+      <text x='72' y='98' font-size='36' fill='#6d43b7' font-family='Quicksand, sans-serif' font-weight='700'>💌 Dear bb 💖</text>
       <text x='72' y='154' font-size='25' fill='#4f4277' font-family='Quicksand, sans-serif'>Selection: ${optimisticChoice ?? 'pending'}</text>
       <text x='72' y='196' font-size='23' fill='#4f4277' font-family='Quicksand, sans-serif'>Plan: ${activity} · ${time}</text>
       <text x='72' y='242' font-size='19' fill='#5a4f7d' font-family='Quicksand, sans-serif'>${prettyNote.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 72)}</text>
