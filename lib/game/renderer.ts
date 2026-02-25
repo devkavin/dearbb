@@ -33,6 +33,31 @@ export function render(ctx: CanvasRenderingContext2D, level: Level, player: Play
   ctx.globalAlpha = 1;
 
   ctx.drawImage(assets.moon, level.moon.x, level.moon.y, level.moon.w, level.moon.h);
+
+  const time = performance.now() / 1000;
+  const phase = (level.dragon.x + level.dragon.y) * 0.015;
+  const driftX = Math.sin(time * 1.1 + phase) * 16;
+  const flutterY = Math.sin(time * 2.6 + phase) * 7;
+  const tilt = Math.sin(time * 2.2 + phase) * 0.08;
+  const pulse = (Math.sin(time * 6.4 + phase) + 1) / 2;
+
+  const dragonX = level.dragon.x + driftX;
+  const dragonY = level.dragon.y + flutterY;
+  const glowRadius = 38 + pulse * 16;
+  const dragonGlow = ctx.createRadialGradient(dragonX + level.dragon.w / 2, dragonY + level.dragon.h / 2, 2, dragonX + level.dragon.w / 2, dragonY + level.dragon.h / 2, glowRadius);
+  dragonGlow.addColorStop(0, 'rgba(162,255,218,0.62)');
+  dragonGlow.addColorStop(1, 'rgba(162,255,218,0)');
+  ctx.fillStyle = dragonGlow;
+  ctx.fillRect(dragonX - 24, dragonY - 24, level.dragon.w + 48, level.dragon.h + 48);
+
+  ctx.save();
+  ctx.translate(dragonX + level.dragon.w / 2, dragonY + level.dragon.h / 2);
+  ctx.rotate(tilt);
+  const scale = 1 + pulse * 0.04;
+  ctx.scale(scale, scale);
+  ctx.drawImage(assets.dragon, -level.dragon.w / 2, -level.dragon.h / 2, level.dragon.w, level.dragon.h);
+  ctx.restore();
+
   level.platforms.forEach((p) => ctx.drawImage(assets.platform, p.x, p.y, p.w, p.h));
   level.props.forEach((p) => ctx.drawImage(assets.prop, p.x, p.y, p.w, p.h));
 
