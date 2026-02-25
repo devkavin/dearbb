@@ -1,22 +1,22 @@
 class AudioManager {
   private ctx: AudioContext | null = null;
   private muted = false;
-  private ambientNode: OscillatorNode | null = null;
-  private ambientWobbleNode: OscillatorNode | null = null;
   private gainNode: GainNode | null = null;
-  private wantsAmbient = false;
+  private websiteMusicTimer: number | null = null;
+  private gameMusicTimer: number | null = null;
+  private currentScene: 'none' | 'website' | 'game' = 'none';
+  private typingLastAt = 0;
 
   init() {
     if (typeof window === 'undefined' || this.ctx) return;
     this.ctx = new AudioContext();
     this.gainNode = this.ctx.createGain();
-    this.gainNode.gain.value = 0.05;
+    this.gainNode.gain.value = 0.06;
     this.gainNode.connect(this.ctx.destination);
 
-    // Unlock audio on first interaction so sounds work reliably across browsers.
     const unlock = () => {
       void this.ensureReady();
-      if (this.wantsAmbient && !this.muted) this.ambient(true);
+      if (!this.muted) this.resumeSceneMusic();
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
       window.removeEventListener('touchstart', unlock);
@@ -42,26 +42,52 @@ class AudioManager {
 
   setMuted(muted: boolean) {
     this.muted = muted;
-    if (this.gainNode) this.gainNode.gain.value = muted ? 0 : 0.05;
-    if (!muted && this.wantsAmbient) this.ambient(true);
+    if (this.gainNode) this.gainNode.gain.value = muted ? 0 : 0.06;
+    if (muted) {
+      this.stopMusic();
+      return;
+    }
+    this.resumeSceneMusic();
   }
 
-  private chirp(config: {
-    type: OscillatorType;
-    start: number;
-    end: number;
-    duration?: number;
-    volume?: number;
-  }) {
-    void this.playChirp(config);
+  setSceneMusic(scene: 'none' | 'website' | 'game') {
+    this.currentScene = scene;
+    if (scene === 'none') {
+      this.stopMusic();
+      return;
+    }
+    if (this.muted) return;
+    this.startSceneMusic(scene);
   }
 
-  private async playChirp({ type, start, end, duration = 0.14, volume = 0.08 }: {
+  private resumeSceneMusic() {
+    if (this.currentScene === 'none') return;
+    this.startSceneMusic(this.currentScene);
+  }
+
+  private stopMusic() {
+    if (this.websiteMusicTimer) {
+      window.clearInterval(this.websiteMusicTimer);
+      this.websiteMusicTimer = null;
+    }
+    if (this.gameMusicTimer) {
+      window.clearInterval(this.gameMusicTimer);
+      this.gameMusicTimer = null;
+    }
+  }
+
+  private startSceneMusic(scene: 'website' | 'game') {
+    this.stopMusic();
+    if (scene === 'website') this.startWebsiteMusic();
+    if (scene === 'game') this.startGameMusic();
+  }
+
+  private async tone({ type, frequency, duration, volume = 0.08, slideTo }: {
     type: OscillatorType;
-    start: number;
-    end: number;
-    duration?: number;
+    frequency: number;
+    duration: number;
     volume?: number;
+    slideTo?: number;
   }) {
     if (this.muted) return;
     const ok = await this.ensureReady();
@@ -70,18 +96,10 @@ class AudioManager {
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    const lfo = this.ctx.createOscillator();
-    const lfoGain = this.ctx.createGain();
 
     osc.type = type;
-    osc.frequency.setValueAtTime(start, now);
-    osc.frequency.exponentialRampToValueAtTime(end, now + duration);
-
-    lfo.type = 'sine';
-    lfo.frequency.value = 8;
-    lfoGain.gain.value = 3;
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
+    osc.frequency.setValueAtTime(frequency, now);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
 
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(volume, now + 0.02);
@@ -90,79 +108,75 @@ class AudioManager {
     osc.connect(gain);
     gain.connect(this.ctx.destination);
 
-    lfo.start(now);
     osc.start(now);
     osc.stop(now + duration + 0.01);
-    lfo.stop(now + duration + 0.01);
   }
 
-  jump() {
-    this.chirp({ type: 'triangle', start: 300, end: 520, duration: 0.12, volume: 0.075 });
+  private startWebsiteMusic() {
+    const melody = [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 783.99, 880];
+    let idx = 0;
+    this.websiteMusicTimer = window.setInterval(() => {
+      const main = melody[idx % melody.length];
+      const harmony = main / 2;
+      void this.tone({ type: 'triangle', frequency: main, slideTo: main * 1.015, duration: 0.42, volume: 0.03 });
+      void this.tone({ type: 'sine', frequency: harmony, duration: 0.42, volume: 0.02 });
+      idx += 1;
+    }, 460);
   }
 
-  token() {
-    this.chirp({ type: 'triangle', start: 740, end: 1050, duration: 0.16, volume: 0.1 });
-    setTimeout(() => this.chirp({ type: 'sine', start: 920, end: 1280, duration: 0.1, volume: 0.08 }), 40);
+  private startGameMusic() {
+    const bass = [164.81, 146.83, 196, 220, 196, 174.61];
+    const lead = [329.63, 392, 440, 523.25, 493.88, 440];
+    let idx = 0;
+    this.gameMusicTimer = window.setInterval(() => {
+      const i = idx % bass.length;
+      void this.tone({ type: 'square', frequency: bass[i], duration: 0.25, volume: 0.03 });
+      void this.tone({ type: 'triangle', frequency: lead[i], slideTo: lead[i] * 1.02, duration: 0.22, volume: 0.028 });
+      idx += 1;
+    }, 280);
   }
 
   click() {
-    this.chirp({ type: 'sine', start: 520, end: 760, duration: 0.08, volume: 0.06 });
+    void this.tone({ type: 'sine', frequency: 610, slideTo: 860, duration: 0.07, volume: 0.05 });
+  }
+
+  jump() {
+    void this.tone({ type: 'triangle', frequency: 300, slideTo: 520, duration: 0.11, volume: 0.075 });
+  }
+
+  token() {
+    void this.tone({ type: 'triangle', frequency: 780, slideTo: 1060, duration: 0.12, volume: 0.09 });
+    window.setTimeout(() => void this.tone({ type: 'sine', frequency: 920, slideTo: 1290, duration: 0.11, volume: 0.07 }), 45);
   }
 
   oops() {
-    this.chirp({ type: 'sawtooth', start: 260, end: 150, duration: 0.14, volume: 0.07 });
+    void this.tone({ type: 'sawtooth', frequency: 260, slideTo: 150, duration: 0.16, volume: 0.06 });
   }
 
   tada() {
-    this.chirp({ type: 'triangle', start: 620, end: 900, duration: 0.12, volume: 0.09 });
-    setTimeout(() => this.chirp({ type: 'triangle', start: 780, end: 1180, duration: 0.14, volume: 0.1 }), 90);
-    setTimeout(() => this.chirp({ type: 'sine', start: 980, end: 1380, duration: 0.18, volume: 0.09 }), 170);
+    void this.tone({ type: 'triangle', frequency: 620, slideTo: 910, duration: 0.12, volume: 0.09 });
+    window.setTimeout(() => void this.tone({ type: 'triangle', frequency: 810, slideTo: 1180, duration: 0.14, volume: 0.1 }), 90);
+    window.setTimeout(() => void this.tone({ type: 'sine', frequency: 980, slideTo: 1390, duration: 0.16, volume: 0.09 }), 170);
   }
 
-  ambient(on: boolean) {
-    this.wantsAmbient = on;
-    this.init();
-    if (!this.ctx || !this.gainNode) return;
-    if (!on) {
-      this.ambientNode?.stop();
-      this.ambientWobbleNode?.stop();
-      this.ambientNode = null;
-      this.ambientWobbleNode = null;
-      return;
-    }
-    if (this.muted || this.ambientNode) return;
+  envelopeOpen() {
+    void this.tone({ type: 'triangle', frequency: 260, slideTo: 520, duration: 0.2, volume: 0.06 });
+    window.setTimeout(() => void this.tone({ type: 'sine', frequency: 540, slideTo: 690, duration: 0.1, volume: 0.04 }), 60);
+  }
 
-    const startAmbient = async () => {
-      const ok = await this.ensureReady();
-      if (!ok || !this.ctx || !this.gainNode || this.ambientNode || this.muted || !this.wantsAmbient) return;
+  envelopeClose() {
+    void this.tone({ type: 'triangle', frequency: 480, slideTo: 250, duration: 0.16, volume: 0.05 });
+  }
 
-      const osc = this.ctx.createOscillator();
-      osc.type = 'triangle';
-      osc.frequency.value = 232;
+  paperSlide() {
+    void this.tone({ type: 'sawtooth', frequency: 420, slideTo: 330, duration: 0.24, volume: 0.03 });
+  }
 
-      const ambientGain = this.ctx.createGain();
-      ambientGain.gain.value = 0.02;
-
-      const wobble = this.ctx.createOscillator();
-      const wobbleGain = this.ctx.createGain();
-      wobble.type = 'sine';
-      wobble.frequency.value = 0.5;
-      wobbleGain.gain.value = 8;
-
-      wobble.connect(wobbleGain);
-      wobbleGain.connect(osc.frequency);
-
-      osc.connect(ambientGain);
-      ambientGain.connect(this.gainNode);
-
-      osc.start();
-      wobble.start();
-
-      this.ambientNode = osc;
-      this.ambientWobbleNode = wobble;
-    };
-
-    void startAmbient();
+  typeKey() {
+    const now = Date.now();
+    if (now - this.typingLastAt < 35) return;
+    this.typingLastAt = now;
+    void this.tone({ type: 'square', frequency: 1500, slideTo: 1380, duration: 0.028, volume: 0.018 });
   }
 }
 
