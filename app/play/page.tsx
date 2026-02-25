@@ -19,6 +19,9 @@ export default function PlayPage() {
   const initial = useMemo(() => storage.read(), []);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const keys = useRef({ left: false, right: false, jump: false });
+  const collectedRef = useRef<string[]>(initial.collectedTokenIds || []);
+  const moonClicksRef = useRef(initial.moonClicks);
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
   const [stage, setStage] = useState(initial.stage || 0);
   const [collected, setCollected] = useState<string[]>(initial.collectedTokenIds || []);
@@ -29,6 +32,7 @@ export default function PlayPage() {
   const [storyTitle, setStoryTitle] = useState('Moonlight Snuggle');
   const [storyLine, setStoryLine] = useState('Then bb smiled and the stars tucked her in.');
   const [memory, setMemory] = useState(initial.timeline);
+  const timelineRef = useRef(initial.timeline);
 
   useEffect(() => {
     audio.setMuted(initial.muted);
@@ -44,7 +48,7 @@ export default function PlayPage() {
       const ctx = canvasRef.current.getContext('2d');
       if (!ctx) return;
 
-      let currentStage = storage.read().stage || 0;
+      let currentStage = initial.stage || 0;
       const player = createPlayer(levels[currentStage].spawn.x, levels[currentStage].spawn.y);
       stop = startLoop(() => {
         const level = levels[currentStage];
@@ -58,23 +62,27 @@ export default function PlayPage() {
         }
 
         for (const token of level.tokens) {
-          const alreadyCollected = storage.read().collectedTokenIds;
+          const alreadyCollected = collectedRef.current;
           if (token.collected || alreadyCollected.includes(token.id)) continue;
           if (intersects(player, token)) {
             token.collected = true;
             const nextCollected = [...alreadyCollected, token.id];
+            collectedRef.current = nextCollected;
             setCollected(nextCollected);
             storage.write({ collectedTokenIds: nextCollected });
-            storage.pushTimeline({ id: token.id, note: token.note, sticker: token.sticker });
-            setMemory(storage.read().timeline);
+            const nextTimeline = [...timelineRef.current, { id: token.id, note: token.note, sticker: token.sticker, stamp: new Date().toISOString() }];
+            storage.write({ timeline: nextTimeline });
+            timelineRef.current = nextTimeline;
+            setMemory(nextTimeline);
             setFlash(Math.random() > 0.5 ? 'bb moment unlocked ✨' : 'Nikki smile detected 💖');
-            setTimeout(() => setFlash(''), 1200);
+            if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+            flashTimeoutRef.current = setTimeout(() => setFlash(''), 1200);
             audio.token();
           }
         }
 
         if (intersects(player, level.portal)) {
-          const count = storage.read().collectedTokenIds.length;
+          const count = collectedRef.current.length;
           if (count >= TOTAL && currentStage === levels.length - 1) {
             audio.tada();
             router.push('/reveal');
@@ -109,7 +117,8 @@ export default function PlayPage() {
         const y = ((evt.clientY - rect.top) / rect.height) * 360;
         const moon = levels[currentStage].moon;
         if (x >= moon.x && x <= moon.x + moon.w && y >= moon.y && y <= moon.y + moon.h) {
-          const clickCount = storage.read().moonClicks + 1;
+          const clickCount = moonClicksRef.current + 1;
+          moonClicksRef.current = clickCount;
           storage.write({ moonClicks: clickCount });
           if (clickCount >= 5) setBooth(true);
         }
@@ -121,8 +130,12 @@ export default function PlayPage() {
       };
     });
 
-    return () => { mounted = false; stop(); };
-  }, [router]);
+    return () => {
+      mounted = false;
+      stop();
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
+  }, [initial.stage, router]);
 
   const downloadStoryCard = () => {
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='#fff5fd'/><rect x='20' y='20' width='520' height='280' rx='18' fill='#e7f4ff' stroke='#a597db' stroke-width='4'/><text x='44' y='74' font-size='22' fill='#6f57a9'>Bedtime Story Booth</text><text x='44' y='124' font-size='28' fill='#3f315e'>${storyTitle}</text><text x='44' y='172' font-size='18' fill='#4b4664'>${storyLine}</text><text x='44' y='244' font-size='16'>🐾💖✨📖🎶</text></svg>`;
@@ -149,7 +162,10 @@ export default function PlayPage() {
 
     setStage(0);
     setCollected([]);
+    collectedRef.current = [];
     setMemory([]);
+    timelineRef.current = [];
+    moonClicksRef.current = 0;
     setBooth(false);
     setFlash('Game reset ✨');
     setTimeout(() => setFlash(''), 1200);

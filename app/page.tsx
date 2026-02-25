@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { type MouseEvent, useEffect, useMemo, useState } from 'react';
-import confetti from 'canvas-confetti';
+import { type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import EnvelopeLetter from '@/components/EnvelopeLetter';
 import Header from '@/components/Header';
@@ -22,6 +21,7 @@ const LETTER_LINES = [
 
 export default function HomePage() {
   const initial = useMemo(() => storage.read(), []);
+  const confettiRef = useRef<((options?: import('canvas-confetti').Options) => Promise<undefined> | null) | null>(null);
   const [reducedMotion, setReducedMotion] = useState(initial.reducedMotion);
   const [muted, setMuted] = useState(initial.muted);
   const [ldr, setLdr] = useState(initial.ldrMode);
@@ -40,11 +40,19 @@ export default function HomePage() {
 
   const heroStars = useMemo(() => ['✨', '💖', '🌙', '⭐', '🫶'], []);
 
-  const burstSparkle = (event: MouseEvent<HTMLButtonElement>) => {
+  const burstSparkle = async (event: MouseEvent<HTMLButtonElement>) => {
     if (reducedMotion) return;
+
+    if (!confettiRef.current) {
+      const loaded = await import('canvas-confetti');
+      confettiRef.current = (loaded.default ?? loaded) as unknown as (options?: import('canvas-confetti').Options) => Promise<undefined> | null;
+    }
+
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
+    const confetti = confettiRef.current;
+    if (!confetti) return;
 
     void confetti({
       particleCount: 80,

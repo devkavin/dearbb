@@ -38,3 +38,12 @@ Then open `http://localhost:3000`.
 - Memory timeline modal
 - Easter egg moon-click “Bedtime Story Booth” with SVG export
 - Share section with clipboard + downloadable SVG date card
+
+
+## Production hardening
+
+- `canvas-confetti` now loads on demand to reduce initial JavaScript during first paint.
+- Game loop localStorage reads were reduced to in-memory refs to keep frame updates smoother.
+- `next.config.mjs` enables compression and removes the `x-powered-by` header.
+- `vercel.json` adds a small baseline of security headers for all routes.
+- `package.json` now includes a Node.js engine requirement for consistent Vercel builds.
