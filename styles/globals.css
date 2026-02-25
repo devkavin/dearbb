@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@400;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply font-body min-h-screen text-slate-700;
+  background:
+    radial-gradient(circle at 15% 10%, #ffffffcc 0 2px, transparent 3px),
+    radial-gradient(circle at 85% 18%, #fff6beaa 0 2px, transparent 3px),
+    radial-gradient(circle at 40% 35%, #ffd4ec99 0 1px, transparent 3px),
+    linear-gradient(180deg, #d8f0ff 0%, #e7e2ff 44%, #ffd9ec 100%);
+}
+
+.pixel-card {
+  border: 3px solid #fff;
+  box-shadow: 0 10px 0 #c6d1ea;
+}
+
+.btn-cute {
+  @apply rounded-2xl px-5 py-3 font-semibold transition-transform duration-200 active:scale-95 hover:-translate-y-0.5;
+}
+
+.glow-sparkle {
+  position: relative;
+}
+
+.glow-sparkle::before,
+.glow-sparkle::after {
+  content: '✨';
+  position: absolute;
+  font-size: 14px;
+  animation: twinkle 2.3s ease-in-out infinite;
+}
+
+.glow-sparkle::before {
+  top: -8px;
+  left: -10px;
+}
+
+.glow-sparkle::after {
+  right: -10px;
+  bottom: -8px;
+  animation-delay: 0.8s;
+}
+
+.sparkle::after {
+  content: '✨';
+  margin-left: 0.3rem;
+}
+
+.soft-float {
+  animation: floaty 2.8s ease-in-out infinite;
+}
+
+.confetti span {
+  position: absolute;
+  width: 8px;
+  height: 14px;
+  animation: confetti 2s linear infinite;
+}
+
+@keyframes confetti {
+  from { transform: translateY(-15vh) rotate(0deg); opacity: 1; }
+  to { transform: translateY(70vh) rotate(320deg); opacity: 0; }
+}
+
+@keyframes twinkle {
+  0%, 100% { transform: scale(0.8); opacity: 0.55; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
