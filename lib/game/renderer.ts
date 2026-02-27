@@ -1,6 +1,14 @@
 import { Level, Player } from './entities';
 
-export function render(ctx: CanvasRenderingContext2D, level: Level, player: Player, assets: Record<string, HTMLImageElement>, width: number, height: number) {
+export function render(
+  ctx: CanvasRenderingContext2D,
+  level: Level,
+  player: Player,
+  assets: Record<string, HTMLImageElement>,
+  width: number,
+  height: number,
+  partner?: Player | null
+) {
   ctx.clearRect(0, 0, width, height);
 
   const bg = ctx.createLinearGradient(0, 0, 0, height);
@@ -78,4 +86,19 @@ export function render(ctx: CanvasRenderingContext2D, level: Level, player: Play
   ctx.fillStyle = playerGlow;
   ctx.fillRect(player.x - 12, player.y - 12, player.w + 24, player.h + 24);
   ctx.drawImage(assets.player, player.x, player.y, player.w, player.h);
+
+  if (partner) {
+    const partnerGlow = ctx.createRadialGradient(partner.x + partner.w / 2, partner.y + partner.h / 2, 4, partner.x + partner.w / 2, partner.y + partner.h / 2, 26);
+    partnerGlow.addColorStop(0, 'rgba(158,236,255,0.62)');
+    partnerGlow.addColorStop(1, 'rgba(158,236,255,0)');
+    ctx.fillStyle = partnerGlow;
+    ctx.fillRect(partner.x - 12, partner.y - 12, partner.w + 24, partner.h + 24);
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.drawImage(assets.player, partner.x, partner.y, partner.w, partner.h);
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = 'rgba(124,209,255,0.68)';
+    ctx.fillRect(partner.x, partner.y, partner.w, partner.h);
+    ctx.restore();
+  }
 }
