@@ -11,12 +11,13 @@ import { levels } from '@/lib/game/levels';
 import { intersects, updatePlayer } from '@/lib/game/physics';
 import { render } from '@/lib/game/renderer';
 import { loadAssets } from '@/lib/game/svgAssets';
+import { CONNECTION_TIMEOUT_MS, PEER_OPTIONS } from '@/lib/multiplayer/peer';
 import { storage } from '@/lib/storage';
 
 const TOTAL = 5;
 
 type RemoteMessage =
-  | { type: 'state'; stage: number; player: Player }
+  | { type: 'state'; stage: number; player: Pick<Player, 'x' | 'y' | 'vx' | 'vy' | 'onGround'> }
   | { type: 'token'; tokenId: string }
   | { type: 'stage'; stage: number }
   | { type: 'reset' };
@@ -32,6 +33,8 @@ export default function PlayPage() {
   const peerRef = useRef<any>(null);
   const connRef = useRef<any>(null);
   const lastSentRef = useRef(0);
+  const connectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastStateRef = useRef<{ stage: number; x: number; y: number } | null>(null);
 
   const router = useRouter();
   const [stage, setStage] = useState(initial.stage || 0);
@@ -85,6 +88,21 @@ export default function PlayPage() {
 
   const sendMessage = (message: RemoteMessage) => {
     if (connRef.current?.open) connRef.current.send(message);
+  };
+
+  const clearConnectTimer = () => {
+    if (connectTimerRef.current) {
+      clearTimeout(connectTimerRef.current);
+      connectTimerRef.current = null;
+    }
+  };
+
+  const startConnectTimer = () => {
+    clearConnectTimer();
+    connectTimerRef.current = setTimeout(() => {
+      setConnectionStatus('Connection timed out. Please retry or recreate the room code.');
+      if (connRef.current) connRef.current.close();
+    }, CONNECTION_TIMEOUT_MS);
   };
 
   useEffect(() => {
@@ -144,8 +162,22 @@ export default function PlayPage() {
         }
 
         const now = performance.now();
-        if (now - lastSentRef.current > 55) {
-          sendMessage({ type: 'state', stage: currentStage, player: { ...player } });
+        if (now - lastSentRef.current > 90) {
+          const compactState = {
+            stage: currentStage,
+            x: Math.round(player.x),
+            y: Math.round(player.y),
+            vx: Number(player.vx.toFixed(2)),
+            vy: Number(player.vy.toFixed(2)),
+            onGround: player.onGround
+          };
+          const previousState = lastStateRef.current;
+          const positionMoved = !previousState || Math.abs(previousState.x - compactState.x) > 1 || Math.abs(previousState.y - compactState.y) > 1 || previousState.stage !== compactState.stage;
+
+          if (positionMoved) {
+            sendMessage({ type: 'state', stage: currentStage, player: compactState });
+            lastStateRef.current = { stage: compactState.stage, x: compactState.x, y: compactState.y };
+          }
           lastSentRef.current = now;
         }
 
@@ -192,6 +224,7 @@ export default function PlayPage() {
   }, [addCollectedToken, initial.stage, router, syncTokenFlags]);
 
   const attachConnection = (connection: any) => {
+    clearConnectTimer();
     connRef.current = connection;
     setConnectionStatus('Connected 💞');
 
@@ -200,7 +233,7 @@ export default function PlayPage() {
       if (!message || typeof message !== 'object' || !('type' in message)) return;
 
       if (message.type === 'state') {
-        partnerRef.current = message.player;
+        partnerRef.current = { ...message.player, w: 32, h: 32 };
       }
 
       if (message.type === 'token') {
@@ -218,21 +251,24 @@ export default function PlayPage() {
     });
 
     connection.on('close', () => {
+      clearConnectTimer();
       connRef.current = null;
       partnerRef.current = null;
       setConnectionStatus('Partner disconnected');
     });
 
-    connection.on('error', () => {
-      setConnectionStatus('Connection issue. Retry the room code.');
+    connection.on('error', (error: unknown) => {
+      const detail = error instanceof Error ? error.message : 'unknown issue';
+      setConnectionStatus(`Connection issue: ${detail}`);
     });
   };
 
   const createRoom = async () => {
     const { default: Peer } = await import('peerjs');
     if (peerRef.current) peerRef.current.destroy();
+    clearConnectTimer();
     const id = `dearbb-${Math.random().toString(36).slice(2, 8)}`;
-    const peer = new Peer(id);
+    const peer = new Peer(id, PEER_OPTIONS);
     peerRef.current = peer;
 
     peer.on('open', (openId: string) => {
@@ -242,29 +278,43 @@ export default function PlayPage() {
 
     peer.on('connection', (connection: any) => {
       setConnectionStatus('Partner joining...');
+      startConnectTimer();
       attachConnection(connection);
     });
 
-    peer.on('error', () => setConnectionStatus('Could not host room. Try again.'));
+    peer.on('error', (error: unknown) => {
+      const detail = error instanceof Error ? error.message : 'unknown issue';
+      setConnectionStatus(`Could not host room. ${detail}`);
+    });
   };
 
   const joinRoom = async () => {
     if (!joinCode.trim()) return;
     const { default: Peer } = await import('peerjs');
     if (peerRef.current) peerRef.current.destroy();
-    const peer = new Peer();
+    clearConnectTimer();
+    const peer = new Peer(PEER_OPTIONS);
     peerRef.current = peer;
 
     peer.on('open', () => {
       const connection = peer.connect(joinCode.trim());
       setConnectionStatus('Connecting...');
+      startConnectTimer();
       connection.on('open', () => attachConnection(connection));
     });
 
-    peer.on('error', () => setConnectionStatus('Could not join room. Check the code and retry.'));
+    peer.on('error', (error: { type?: string; message?: string }) => {
+      clearConnectTimer();
+      if (error?.type === 'peer-unavailable') {
+        setConnectionStatus('Room code not found. Ask host to recreate and share a new one.');
+        return;
+      }
+      setConnectionStatus(`Could not join room. ${error?.message || 'Check the code and retry.'}`);
+    });
   };
 
   useEffect(() => () => {
+    clearConnectTimer();
     if (connRef.current) connRef.current.close();
     if (peerRef.current) peerRef.current.destroy();
   }, []);
